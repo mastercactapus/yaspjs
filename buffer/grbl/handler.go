@@ -67,6 +67,7 @@ func (g *Grbl) HandleInput(input buffer.QueueItem) []buffer.CommandResponse {
 
 func (Grbl) FlowConfig() buffer.FlowConfig {
 	return buffer.FlowConfig{
+		InputSplitFunc:    ScanInput,
 		SplitControlChars: buffer.SplitStaticControlChars("\x18?~!\x84\x85\x90\x91\x92\x93\x94\x95\x96\x97\x99\x9a\x9b\x9c\x9c\x9d\x9e\xa0\xa1"),
 		IsControl:         func(cmd string) bool { return strings.HasPrefix(cmd, "$J=") },
 		IsMeta: func(cmd string) bool {

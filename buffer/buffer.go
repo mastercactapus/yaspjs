@@ -177,9 +177,8 @@ func (b *Buffer) loop() {
 
 func (b *Buffer) readLoop() {
 	r := bufio.NewScanner(b.rwc)
-	if b.cfg.RecvSplitFunc != nil {
-		r.Split(b.cfg.RecvSplitFunc)
-	}
+	r.Split(b.cfg.SerialDataSplitFunc)
+
 	for r.Scan() {
 		if r.Text() == "" {
 			continue
@@ -222,6 +221,7 @@ func (b *Buffer) Queue(id, data string) error {
 	}
 
 	s := bufio.NewScanner(strings.NewReader(data))
+	s.Split(b.cfg.InputSplitFunc)
 	var lines []string
 	for s.Scan() {
 		if s.Text() == "" {

@@ -23,11 +23,11 @@ type FlowConfig struct {
 	// WrapInput is used to wrap a raw command for sending. The default is to append a newline (`\n`).
 	WrapInput func(string) string
 
-	// SendSplitFunc can be specified to override using bufio.ScanLines.
-	SendSplitFunc bufio.SplitFunc
+	// InputSplitFunc can be specified to override using bufio.ScanLines for input commands.
+	InputSplitFunc bufio.SplitFunc
 
-	// RecvSplitFunc can be specified to override using bufio.ScanLines.
-	RecvSplitFunc bufio.SplitFunc
+	// SerialDataSplitFunc can be specified to override using bufio.ScanLines for incomming serial data.
+	SerialDataSplitFunc bufio.SplitFunc
 
 	// IsControl should return true if a command should be sent before
 	// any other pending data. Control commands are sent even in an error state.
@@ -53,11 +53,11 @@ func (cfg FlowConfig) WithDefaults() FlowConfig {
 			return nil, input
 		}
 	}
-	if cfg.RecvSplitFunc == nil {
-		cfg.RecvSplitFunc = bufio.ScanLines
+	if cfg.SerialDataSplitFunc == nil {
+		cfg.SerialDataSplitFunc = bufio.ScanLines
 	}
-	if cfg.SendSplitFunc == nil {
-		cfg.SendSplitFunc = bufio.ScanLines
+	if cfg.InputSplitFunc == nil {
+		cfg.InputSplitFunc = bufio.ScanLines
 	}
 	if cfg.IsControl == nil {
 		cfg.IsControl = func(string) bool { return false }
