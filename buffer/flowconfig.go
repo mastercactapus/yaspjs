@@ -33,6 +33,12 @@ type FlowConfig struct {
 	// any other pending data. Control commands are sent even in an error state.
 	IsControl func(cmd string) bool
 
+	// IsMeta should return true if a command is intended for the buffer
+	// handler and not the actual serial port. (e.g. `*init*`) It will
+	// be passed to `HandleMeta` instead of written to the port. Meta commands
+	// are prioritized and do not count against any buffer limits.
+	IsMeta func(cmd string) bool
+
 	// IsBufferReset should return true if the command is expected to reset the data buffer.
 	IsBufferReset func(cmd string) bool
 

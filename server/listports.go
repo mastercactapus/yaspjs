@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 )
 
@@ -38,7 +37,6 @@ func (srv *Server) ListPorts() ([]SerialPortInfo, error) {
 	sort.Slice(info, func(i, j int) bool { return info[i].Name < info[j].Name })
 
 	ports := <-srv.ports
-	fmt.Println(ports)
 	for i := range info {
 		info[i].AvailableBufferAlgorithms = srv.bufferTypeNames
 		p := ports[info[i].Name]
@@ -52,8 +50,6 @@ func (srv *Server) ListPorts() ([]SerialPortInfo, error) {
 		info[i].BufferAlgorithm = p.bufferType
 	}
 	srv.ports <- ports
-
-	fmt.Println(info)
 
 	return info, nil
 }

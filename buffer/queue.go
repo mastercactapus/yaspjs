@@ -17,6 +17,7 @@ type Queue struct {
 	byteLen   chan int
 	condition chan func(interface{}) bool
 	recheck   chan struct{}
+	buffer    chan []interface{}
 
 	reqClose chan struct{}
 	close    chan struct{}
@@ -71,6 +72,7 @@ func NewQueue() *Queue {
 		len:     make(chan int),
 		byteLen: make(chan int),
 		recheck: make(chan struct{}),
+		buffer:  make(chan []interface{}),
 
 		condition: make(chan func(interface{}) bool),
 	}
@@ -82,6 +84,7 @@ func (q *Queue) loop() {
 	defer close(q.len)
 	defer close(q.byteLen)
 	defer close(q.data)
+	defer close(q.buffer)
 	defer close(q.close)
 
 	var buf []interface{}
@@ -123,6 +126,7 @@ func (q *Queue) loop() {
 	for {
 		if len(buf) == 0 || !conditional(buf[0]) {
 			select {
+			case q.buffer <- buf:
 			case <-q.recheck:
 			case cond := <-q.condition:
 				conditional = cond
@@ -144,6 +148,7 @@ func (q *Queue) loop() {
 		}
 
 		select {
+		case q.buffer <- buf:
 		case <-q.recheck:
 		case cond := <-q.condition:
 			conditional = cond
@@ -242,6 +247,9 @@ func (q *Queue) UnShift(data interface{}) error {
 	}
 	return nil
 }
+
+// Buffer returns the internal buffer state.
+func (q *Queue) Buffer() []interface{} { return <-q.buffer }
 
 // Shift will return and remove the first item in the Queue. If empty, it will
 // block until data is added, or the Queue is closed.

@@ -23,9 +23,9 @@ type Buffer struct {
 	priorityQ *Queue
 	onReadQ   *Queue
 	onUpdateQ *Queue
+	metaQ     *Queue
 	ctrlCh    chan string
 
-	id string
 	mx sync.Mutex
 }
 
@@ -49,6 +49,7 @@ func NewBuffer(cfg Config) *Buffer {
 		readQ:     NewQueue(),
 		writeQ:    NewQueue(),
 		priorityQ: NewQueue(),
+		metaQ:     NewQueue(),
 
 		onReadQ:   NewQueue(),
 		onUpdateQ: NewQueue(),
@@ -102,6 +103,12 @@ func (b *Buffer) handleRead(line string) {
 		b.onUpdateQ.Push(resp)
 	}
 }
+func (b *Buffer) handleMeta(line string) {
+	resp := b.h.HandleMeta(line)
+	if resp != "" {
+		b.onReadQ.Push(resp + "\n")
+	}
+}
 func (b *Buffer) handleWrite(item QueueItem) {
 	_, err := io.WriteString(b.rwc, item.Data)
 	if err != nil {
@@ -128,6 +135,9 @@ func (b *Buffer) loop() {
 		case chr := <-b.ctrlCh:
 			b.handleWrite(QueueItem{Data: chr})
 			continue
+		case line := <-b.metaQ.Data():
+			b.handleMeta(line.(string))
+			continue
 		case line := <-b.readQ.Data():
 			b.handleRead(line.(string))
 			continue
@@ -137,6 +147,9 @@ func (b *Buffer) loop() {
 		select {
 		case chr := <-b.ctrlCh:
 			b.handleWrite(QueueItem{Data: chr})
+			continue
+		case line := <-b.metaQ.Data():
+			b.handleMeta(line.(string))
 			continue
 		case item := <-b.priorityQ.Data():
 			b.handleWrite(item.(QueueItem))
@@ -156,6 +169,8 @@ func (b *Buffer) loop() {
 			b.handleWrite(item.(QueueItem))
 		case line := <-b.readQ.Data():
 			b.handleRead(line.(string))
+		case line := <-b.metaQ.Data():
+			b.handleMeta(line.(string))
 		}
 	}
 }
@@ -182,6 +197,10 @@ func (b *Buffer) Close() error {
 }
 
 func (b *Buffer) queueLine(item QueueItem) error {
+	if b.cfg.IsMeta(item.Data) {
+		return b.metaQ.Push(item.Data)
+	}
+
 	item.Data = b.cfg.WrapInput(item.Data)
 	defer b.onUpdateQ.Push(CommandResponse{QueueItem: item, Queued: true})
 
@@ -205,6 +224,9 @@ func (b *Buffer) Queue(id, data string) error {
 	s := bufio.NewScanner(strings.NewReader(data))
 	var lines []string
 	for s.Scan() {
+		if s.Text() == "" {
+			continue
+		}
 		lines = append(lines, s.Text())
 	}
 

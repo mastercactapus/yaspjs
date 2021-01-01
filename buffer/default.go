@@ -9,4 +9,5 @@ func (Default) CheckBuffer(string) bool                          { return true }
 func (Default) IsPaused() bool                                   { return false }
 func (Default) HandleInput(input QueueItem) []CommandResponse    { return nil }
 func (Default) HandleResponse(response string) []CommandResponse { return nil }
+func (Default) HandleMeta(cmd string) string                     { return "" }
 func (Default) PollCommand() string                              { return "" }

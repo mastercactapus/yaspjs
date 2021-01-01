@@ -8,6 +8,7 @@ type Handler interface {
 	IsPaused() bool
 
 	HandleInput(input QueueItem) []CommandResponse
+	HandleMeta(cmd string) string
 	HandleResponse(response string) []CommandResponse
 
 	PollCommand() string
