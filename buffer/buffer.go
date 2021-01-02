@@ -110,6 +110,12 @@ func (b *Buffer) handleMeta(line string) {
 	}
 }
 func (b *Buffer) handleWrite(item QueueItem) {
+	if b.cfg.IsBufferReset(item.Data) {
+		b.writeQ.Reset()
+	}
+	if fn := b.cfg.IsPartialBufferReset(item.Data); fn != nil {
+		b.writeQ.Filter(func(item interface{}) bool { return fn(item.(QueueItem).Data) })
+	}
 	_, err := io.WriteString(b.rwc, item.Data)
 	if err != nil {
 		// TODO: error
